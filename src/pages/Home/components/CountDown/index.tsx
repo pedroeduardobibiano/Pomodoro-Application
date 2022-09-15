@@ -1,19 +1,18 @@
 import { differenceInSeconds } from "date-fns";
-import { useEffect, useState } from "react";
+import { useContext, useEffect } from "react";
+import { CyclesContext } from "../../../../context/CyclesContext";
 import { CountdownContainer, Separator } from "./style";
 
-interface CountDownProps {
-  activeCycle: any;
-  setCycles: any;
-  activeCycleId: any;
-}
+export function CountDown() {
+  const {
+    activeCycle,
+    activeCycleId,
+    markCurrentCycleAsFinished,
+    amountSecondPassed,
+    setSecondPassed,
+  } = useContext(CyclesContext);
+  CountDown;
 
-export function CountDown({
-  activeCycle,
-  setCycles,
-  activeCycleId,
-}: CountDownProps) {
-  const [amountSecondPassed, setAmountSecondPassed] = useState(0);
   const totalSeconds = activeCycle ? activeCycle.minutesAmount * 60 : 0;
 
   useEffect(() => {
@@ -22,31 +21,43 @@ export function CountDown({
       interval = setInterval(() => {
         const secondDifference = differenceInSeconds(
           new Date(),
-          activeCycle.startDate
+          new Date(activeCycle.startDate)
         );
         if (secondDifference >= totalSeconds) {
-          setCycles((state) =>
-            state.map((cycle) => {
-              if (cycle.id === activeCycleId) {
-                return { ...cycle, finishedDate: new Date() };
-              } else {
-                return cycle;
-              }
-            })
-          );
+          markCurrentCycleAsFinished();
 
-          setAmountSecondPassed(totalSeconds);
+          setSecondPassed(totalSeconds);
 
           clearInterval(interval);
         } else {
-          setAmountSecondPassed(secondDifference);
+          setSecondPassed(secondDifference);
         }
       }, 1000);
     }
     return () => {
       clearInterval(interval);
     };
-  }, [activeCycle, totalSeconds, activeCycleId]);
+  }, [
+    activeCycle,
+    totalSeconds,
+    activeCycleId,
+    markCurrentCycleAsFinished,
+    setSecondPassed,
+  ]);
+
+  const currentSeconds = activeCycle ? totalSeconds - amountSecondPassed : 0;
+
+  const minutesAmount = Math.floor(currentSeconds / 60);
+  const secondAmount = currentSeconds % 60;
+
+  const minutes = String(minutesAmount).padStart(2, "0");
+  const seconds = String(secondAmount).padStart(2, "0");
+
+  useEffect(() => {
+    if (activeCycle) {
+      document.title = `${minutes}: ${seconds}`;
+    }
+  }, [minutes, seconds, activeCycle]);
 
   return (
     <CountdownContainer>
